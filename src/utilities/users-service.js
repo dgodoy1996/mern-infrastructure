@@ -1,55 +1,54 @@
-// Service modules export business/app logic
-// such as managing tokens, etc.
-// Service modules often depend upon API modules
-// for making AJAX requests to the server.
+// Serice modules hold the code that implements
+// "business"/application logic
+// Service methods often depend upon or use
+// methods in the API modules
 
+// Import all named exports
 import * as usersAPI from './users-api';
 
 export async function signUp(userData) {
+  // Delegate the AJAX request to the users-api.js
+  // module.
   const token = await usersAPI.signUp(userData);
-  //Persist the "token"
-  localStorage.setItem('token', token)
-  return getUser()
-}
-
-export async function login(credentials) {
-  const token = await usersAPI.login(credentials)
-  localStorage.setItem('token', token)
-  return getUser()
-}
-
-export async function logOut() {
-  localStorage.removeItem('token')
+  localStorage.setItem('token', token);
+  return getUser();
 }
 
 export function getToken() {
-  const token = localStorage.getItem('token')
-  
-  //No token exists
-  //User state set to null
-  if(!token) return null
-  
-  //Valid token exists
-  //Get user from the token
-  //Set user state to the user object
-  const payload = JSON.parse(atob(token.split('.')[1]))
-  
-  //Token exists but it's expired
-  //Set user state to null
-  //Remove the token from storage
-  if(payload.expiration < Date.now() / 1000) {
-    localStorage.removeItem('token')
-    return null
+  // getItem will return null if the key does not exist
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  // Let's check if token has expired...
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  if (payload.exp < Date.now() / 1000) {
+    // Token has expired
+    localStorage.removeItem('token');
+    return null;
   }
-  return token
+  return token;
 }
 
 export function getUser() {
-  const token = getToken()
-  return token ? JSON.parse(atob(token.split('.')[1])).user : null
+  const token = getToken();
+  return token ?
+    JSON.parse(atob(token.split('.')[1])).user
+    :
+    null;
 }
 
-export async function checkToken() {
+export function logOut() {
+  localStorage.removeItem('token');
+}
+
+export async function login(credentials) {
+  // Delegate the AJAX request to the users-api.js
+  // module.
+  const token = await usersAPI.login(credentials);
+  localStorage.setItem('token', token);
+  return getUser();
+}
+
+export function checkToken() {
   return usersAPI.checkToken()
-  .then(dateStr => new Date(dateStr))
+    .then(dateStr => new Date(dateStr));
 }
